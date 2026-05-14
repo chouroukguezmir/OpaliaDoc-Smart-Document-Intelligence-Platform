@@ -1,0 +1,130 @@
+{
+  "info": {
+    "_postman_id": "login-api-collection",
+    "name": "Login API - Demo Architecture",
+    "description": "Collection complète pour tester le système de login",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. REGISTER - Créer un Compte",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"password123\",\n  \"confirmPassword\": \"password123\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8081/api/auth/register",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8081",
+          "path": ["api", "auth", "register"]
+        },
+        "description": "Enregistre un nouvel utilisateur et retourne un JWT token"
+      },
+      "response": []
+    },
+    {
+      "name": "2. LOGIN - Se Connecter",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"password123\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8081/api/auth/login",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8081",
+          "path": ["api", "auth", "login"]
+        },
+        "description": "Authentifie un utilisateur existant et retourne un JWT token"
+      },
+      "response": []
+    },
+    {
+      "name": "3. GET PROFILE - Récupérer les Infos (Authentifié)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8081/api/auth/profile",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8081",
+          "path": ["api", "auth", "profile"]
+        },
+        "description": "Récupère les informations du profil utilisateur. Requiert le JWT token dans l'header Authorization"
+      },
+      "response": []
+    },
+    {
+      "name": "4. LOGOUT - Se Déconnecter",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8081/api/auth/logout?username=admin",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8081",
+          "path": ["api", "auth", "logout"],
+          "query": [
+            {
+              "key": "username",
+              "value": "admin"
+            }
+          ]
+        },
+        "description": "Déconnecte l'utilisateur (stateless avec JWT, le client doit supprimer le token)"
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "token",
+      "value": "",
+      "description": "JWT Token - À remplir après le login/register"
+    },
+    {
+      "key": "base_url",
+      "value": "http://localhost:8081",
+      "description": "URL de base de l'API"
+    }
+  ]
+}
+
