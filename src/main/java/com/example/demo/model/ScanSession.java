@@ -2,7 +2,6 @@ package com.example.demo.model;
 
 import lombok.Data;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
@@ -15,20 +14,12 @@ public class ScanSession {
     private String id;
 
     private String scannedBy;
-
-    @Indexed
-    private LocalDateTime scannedAt = LocalDateTime.now();
-
     private String fileOriginalName;
     private String fileType;
     private String filePath;
+    private String status;         // PROCESSING, PENDING_CONFIRMATION, FAILED
+    private String documentType;   // EMPLOYEE, TYPE_A, TYPE_B, TYPE_C
     private Boolean isHandwritten;
-
-    @Indexed
-    private String status;
-
-    @Indexed
-    private String documentType;
-
-    private String documentId;
+    private String pendingDocumentId; // référence au PendingDocument créé
+    private LocalDateTime createdAt = LocalDateTime.now();
 }

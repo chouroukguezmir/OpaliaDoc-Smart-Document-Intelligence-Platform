@@ -2,7 +2,7 @@ package com.example.demo;
 
 import com.example.demo.model.AdminDocType;
 import com.example.demo.model.AdminUser;
-import com.example.demo.repository.AdminDocTypeRepository;
+import com.example.demo.repository.AdminDocumentRepository;
 import com.example.demo.repository.AdminUserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -34,7 +34,7 @@ public class DemoApplication {
 	}
 
 	@Bean
-	CommandLineRunner initDocTypes(AdminDocTypeRepository repo) {
+	CommandLineRunner initDocTypes(AdminDocumentRepository repo) {
 		return args -> {
 			if (repo.count() == 0) {
 

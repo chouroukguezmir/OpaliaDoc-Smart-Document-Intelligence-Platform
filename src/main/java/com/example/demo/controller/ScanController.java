@@ -3,46 +3,40 @@ package com.example.demo.controller;
 import com.example.demo.model.ScanSession;
 import com.example.demo.service.ScanService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/scan")
 @RequiredArgsConstructor
 public class ScanController {
 
-    private  ScanService scanService;
+    private final ScanService scanService;
 
-    public ScanController(ScanService scanService) {
-        this.scanService = scanService;
-    }
-
-    /**
-     * Upload et analyse d'un document PDF
-     * POST /api/scan/upload
-     */
     @PostMapping("/upload")
-    public ResponseEntity<ScanSession> uploadDocument(
+    public ResponseEntity<ScanSession> upload(
             @RequestParam("file") MultipartFile file,
-            Authentication authentication) {
+            Authentication auth) {
 
-        if (file.isEmpty()) {
-            return ResponseEntity.badRequest().build();
-        }
+        if (file.isEmpty()) return ResponseEntity.badRequest().build();
 
-        String adminUsername = authentication.getName();
-        ScanSession session = scanService.scanDocument(file, adminUsername);
+        String username = auth != null ? auth.getName() : "admin";
+        log.info("Upload : {} | par : {}", file.getOriginalFilename(), username);
+
+        ScanSession session = scanService.scanDocument(file, username);
         return ResponseEntity.ok(session);
     }
 
-    /**
-     * Récupère une session de scan par ID
-     * GET /api/scan/{id}
-     */
     @GetMapping("/{id}")
     public ResponseEntity<ScanSession> getSession(@PathVariable String id) {
-        return ResponseEntity.ok(scanService.getSessionById(id));
+        try {
+            return ResponseEntity.ok(scanService.getSessionById(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 }

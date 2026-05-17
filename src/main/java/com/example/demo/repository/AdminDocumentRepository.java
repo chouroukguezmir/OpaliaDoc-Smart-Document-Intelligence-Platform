@@ -12,5 +12,5 @@ public interface AdminDocumentRepository
     List<AdminDocument> findBySubType(String subType);
     long countByStatus(String status);
     long countBySubType(String subType);
-    long countByIsHandwritten(Boolean isHandwritten);  // ← NOUVEAU
+    long countByIsHandwritten(Boolean isHandwritten);
 }

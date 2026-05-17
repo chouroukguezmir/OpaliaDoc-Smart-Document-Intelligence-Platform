@@ -2,7 +2,6 @@ package com.example.demo.model;
 
 import lombok.Data;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
@@ -17,22 +16,14 @@ public class EmployeeDocument {
 
     private String scanSessionId;
     private String employeeId;
-
     private String rawText;
     private Map<String, Object> extractedFields;
-
     private Double confidence;
-
-    @Indexed
     private Boolean isHandwritten;
-
     private String originalFilePath;
     private String digitalizedPdfPath;
-    private String aiSummary;        // ← NOUVEAU
-
-    @Indexed
-    private String status;
-
+    private String status; // ARCHIVED
     private LocalDateTime analyzedAt;
+    private LocalDateTime archivedAt;
     private LocalDateTime createdAt = LocalDateTime.now();
 }
