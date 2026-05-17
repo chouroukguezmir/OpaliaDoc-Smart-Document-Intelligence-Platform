@@ -9,6 +9,5 @@ public interface EmployeeRepository
         extends MongoRepository<Employee, String> {
 
     List<Employee> findByDepartment(String department);
-    List<Employee> findByCostCenter(String costCenter);
     boolean existsByEmployeeId(String employeeId);
 }
