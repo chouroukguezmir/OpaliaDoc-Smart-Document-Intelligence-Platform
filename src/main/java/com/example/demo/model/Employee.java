@@ -24,7 +24,7 @@ public class Employee {
     private String department;      // Department
     private String mobile;          // Mobile
     private String officePhone;     // Office Phone
-    private String kindOfUpdate;    // Activation | Modification | Removal | Suspension | Reactivation
+    private KindOfUpdate kindOfUpdate;
 
     // Demandeur du formulaire — le "Job Role" est celui du demandeur, pas de l'employé
     private String requester;          // Requester (System Owner / HR responsible)

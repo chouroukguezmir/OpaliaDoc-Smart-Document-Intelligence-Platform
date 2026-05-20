@@ -57,8 +57,14 @@ public class GeminiService {
               "isHandwritten": true|false,
               "confidence": 0.0-1.0,
               "rawText": "tout le texte lisible du document",
-              "fields": {
-                "name": "",             // "User to be activated" — nom de l'utilisateur
+              "fields": { ... voir ci-dessous selon le type ... }
+            }
+
+            Le contenu de "fields" dépend du type détecté :
+
+            ▸ Si EMPLOYEE (E DSI 3812) :
+              {
+                "name": "",             // "User to be activated"
                 "company": "",          // Company
                 "site": "",             // Site
                 "department": "",       // Department
@@ -66,21 +72,75 @@ public class GeminiService {
                 "officePhone": "",      // Office Phone
                 "kindOfUpdate": "",     // case cochée : Activation/Modification/Removal/Suspension/Reactivation
                 "requester": "",        // Requester (System Owner / HR responsible)
-                "requesterJobRole": ""  // "Job Role" — celui du Requester (demandeur)
+                "requesterJobRole": ""  // "Job Role" — celui du Requester
               }
-            }
 
-            Ces champs proviennent du formulaire EMPLOYEE (E DSI 3812). Pour les
-            autres types, remplis ce que tu peux et laisse le reste vide.
+            ▸ Si TYPE_B (Demande de matériel — E DSI 3328) :
+              {
+                "societe": "",
+                "site": "",
+                "direction": "",
+                "fonction": "",
+                "prenom": "",
+                "nom": "",
+                "matricule": "",
+                "numeroTicket": "",
+                "ordinateurDesktop": "",      // "true" si la case est cochée, sinon "false"
+                "ordinateurLaptop": "",
+                "ordinateurIpad": "",
+                "telephonePosteInterne": "",
+                "telephoneSmartphone": "",
+                "internetCleInternet": "",
+                "internetPuceInternet": ""
+              }
+
+            ▸ Si TYPE_C (Demande de matériel externe — E DSI 3797) :
+              {
+                "role": "",                  // "Employeur Opalia" | "Stagiaire" | "Consultant" (la case cochée)
+                "societeUniversite": "",
+                "site": "",
+                "directionDepartement": "",
+                "fonction": "",
+                "encadreurOpalia": "",
+                "prenom": "",
+                "nom": "",
+                "matricule": "",
+                "tel": "",
+                "numeroTicket": "",
+                "raisonAutorisation": "",
+                "cleUsb": "",               // "true" si la case est cochée, sinon "false"
+                "disqueDurExterne": "",
+                "cle4G": "",
+                "lecteurDvd": "",
+                "ordinateurPersonale": ""
+              }
+
+            ▸ Si TYPE_A (Demande de droits d'accès — E DSI 3813) :
+              {
+                "societe": "",
+                "site": "",
+                "direction": "",
+                "fonction": "",
+                "prenom": "",
+                "nom": "",
+                "matricule": "",
+                "tel": "",
+                "classification": ""   // "Confidentiel" ou "Non confidentiel" (case cochée)
+              }
+
+            ▸ Pour UNKNOWN : remplis ce que tu peux ou renvoie {}.
 
             Le document est souvent REMPLI À LA MAIN : lis attentivement chaque
-            case manuscrite, même peu lisible, et reporte la valeur exacte. Pour
-            "kindOfUpdate", indique l'option dont la case est cochée.
+            case manuscrite, même peu lisible, et reporte la valeur exacte.
 
-            ATTENTION à ne pas confondre deux personnes :
+            Pour les CASES À COCHER (ordinateur*, telephone*, internet*, cleUsb,
+            disqueDurExterne, cle4G, lecteurDvd, ordinateurPersonale), renvoie
+            la chaîne "true" si la case est cochée, "false" sinon.
+
+            Pour EMPLOYEE, attention à ne pas confondre :
             - "name" = "User to be activated" (l'utilisateur concerné).
-            - "requester" = "Requester" (le demandeur) et "requesterJobRole" =
-              le champ "Job Role", qui appartient au demandeur, PAS à l'utilisateur.
+            - "requester" / "requesterJobRole" = le demandeur et son Job Role,
+              PAS l'utilisateur.
 
             Règles : laisse une chaîne vide pour un champ absent ou non rempli ;
             ne devine jamais ; n'invente aucune valeur ; le JSON final ne doit
@@ -118,14 +178,33 @@ public class GeminiService {
             HttpEntity<Map<String, Object>> request =
                     new HttpEntity<>(buildRequestBody(base64, mt), headers);
 
-            ResponseEntity<String> response = restTemplate.postForEntity(
-                    apiUrl + "?key=" + apiKey, request, String.class);
+            // Réessaie en cas de 503 / 429 (modèle saturé)
+            int maxAttempts = 3;
+            for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+                try {
+                    ResponseEntity<String> response = restTemplate.postForEntity(
+                            apiUrl + "?key=" + apiKey, request, String.class);
 
-            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
-                return parseResponse(response.getBody());
+                    if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                        return parseResponse(response.getBody());
+                    }
+                    log.error("Gemini a répondu : {}", response.getStatusCode());
+                    return result;
+
+                } catch (org.springframework.web.client.HttpServerErrorException
+                        | org.springframework.web.client.HttpClientErrorException.TooManyRequests e) {
+                    int code = e.getStatusCode().value();
+                    if ((code == 503 || code == 429) && attempt < maxAttempts) {
+                        long backoff = 1500L * attempt;
+                        log.warn("Gemini {} — réessai dans {} ms (tentative {}/{})",
+                                code, backoff, attempt + 1, maxAttempts);
+                        Thread.sleep(backoff);
+                        continue;
+                    }
+                    log.error("Erreur Gemini après {} tentative(s) : {}", attempt, e.getMessage());
+                    return result;
+                }
             }
-            log.error("Gemini a répondu : {}", response.getStatusCode());
-
         } catch (Exception e) {
             log.error("Erreur appel Gemini : {}", e.getMessage(), e);
         }

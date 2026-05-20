@@ -75,10 +75,17 @@ public class ScanServiceImpl implements ScanService {
             Map<String, String> extractedFields =
                     (Map<String, String>) nlpResult.getOrDefault("extracted_fields", new HashMap<>());
 
-            // Fallback si NLP indisponible ou résultat vide
+            // Fallback OCR Java (Tesseract) — protégé : si la lib native n'est
+            // pas chargeable, on n'interrompt pas le scan, on continue avec un
+            // contenu vide que l'admin pourra remplir manuellement dans le drawer
             if (rawText == null || rawText.isBlank()) {
-                rawText = fileTextExtractor.extractText(physicalFile, file.getContentType());
-                isHandwritten = fileTextExtractor.isHandwritten(physicalFile, file.getContentType());
+                try {
+                    rawText = fileTextExtractor.extractText(physicalFile, file.getContentType());
+                    isHandwritten = fileTextExtractor.isHandwritten(physicalFile, file.getContentType());
+                } catch (Throwable t) {
+                    log.error("Fallback OCR Tesseract indisponible : {}", t.getMessage());
+                    rawText = "";
+                }
             }
             if (docType == null || docType.isBlank()) {
                 docType = aiClassifier.detectDocumentType(rawText);

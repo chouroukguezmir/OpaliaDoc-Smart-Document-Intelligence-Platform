@@ -1,7 +1,13 @@
 package com.example.demo.service;
 
+import com.example.demo.model.AccessRequest;
 import com.example.demo.model.AdminDocument;
+import com.example.demo.model.Classification;
 import com.example.demo.model.Employee;
+import com.example.demo.model.ExternalMaterial;
+import com.example.demo.model.KindOfUpdate;
+import com.example.demo.model.Material;
+import com.example.demo.model.Role;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -115,10 +121,77 @@ public class AiClassifierService {
         emp.setDepartment(fields.get("department"));
         emp.setMobile(fields.get("mobile"));
         emp.setOfficePhone(fields.get("officePhone"));
-        emp.setKindOfUpdate(fields.get("kindOfUpdate"));
+        emp.setKindOfUpdate(KindOfUpdate.fromLabel(fields.get("kindOfUpdate")));
         emp.setRequester(fields.get("requester"));
         emp.setRequesterJobRole(fields.get("requesterJobRole"));
         return emp;
+    }
+
+    // ── Mapping vers Material (Demande de matériel — E DSI 3328) ──
+    public Material mapToMaterial(Map<String, String> fields) {
+        Material m = new Material();
+        if (fields == null) return m;
+        m.setSociete(fields.get("societe"));
+        m.setSite(fields.get("site"));
+        m.setDirection(fields.get("direction"));
+        m.setFonction(fields.get("fonction"));
+        m.setPrenom(fields.get("prenom"));
+        m.setNom(fields.get("nom"));
+        m.setMatricule(fields.get("matricule"));
+        m.setNumeroTicket(fields.get("numeroTicket"));
+        m.setOrdinateurDesktop(parseBool(fields.get("ordinateurDesktop")));
+        m.setOrdinateurLaptop(parseBool(fields.get("ordinateurLaptop")));
+        m.setOrdinateurIpad(parseBool(fields.get("ordinateurIpad")));
+        m.setTelephonePosteInterne(parseBool(fields.get("telephonePosteInterne")));
+        m.setTelephoneSmartphone(parseBool(fields.get("telephoneSmartphone")));
+        m.setInternetCleInternet(parseBool(fields.get("internetCleInternet")));
+        m.setInternetPuceInternet(parseBool(fields.get("internetPuceInternet")));
+        return m;
+    }
+
+    private Boolean parseBool(String v) {
+        if (v == null || v.isBlank()) return null;
+        return Boolean.parseBoolean(v.trim());
+    }
+
+    // ── Mapping vers ExternalMaterial (Matériel externe — E DSI 3797) ──
+    public ExternalMaterial mapToExternalMaterial(Map<String, String> fields) {
+        ExternalMaterial em = new ExternalMaterial();
+        if (fields == null) return em;
+        em.setRole(Role.fromLabel(fields.get("role")));
+        em.setSocieteUniversite(fields.get("societeUniversite"));
+        em.setSite(fields.get("site"));
+        em.setDirectionDepartement(fields.get("directionDepartement"));
+        em.setFonction(fields.get("fonction"));
+        em.setEncadreurOpalia(fields.get("encadreurOpalia"));
+        em.setPrenom(fields.get("prenom"));
+        em.setNom(fields.get("nom"));
+        em.setMatricule(fields.get("matricule"));
+        em.setTel(fields.get("tel"));
+        em.setNumeroTicket(fields.get("numeroTicket"));
+        em.setRaisonAutorisation(fields.get("raisonAutorisation"));
+        em.setCleUsb(parseBool(fields.get("cleUsb")));
+        em.setDisqueDurExterne(parseBool(fields.get("disqueDurExterne")));
+        em.setCle4G(parseBool(fields.get("cle4G")));
+        em.setLecteurDvd(parseBool(fields.get("lecteurDvd")));
+        em.setOrdinateurPersonale(parseBool(fields.get("ordinateurPersonale")));
+        return em;
+    }
+
+    // ── Mapping vers AccessRequest (Droits d'Accès — E DSI 3813) ──
+    public AccessRequest mapToAccessRequest(Map<String, String> fields) {
+        AccessRequest ar = new AccessRequest();
+        if (fields == null) return ar;
+        ar.setSociete(fields.get("societe"));
+        ar.setSite(fields.get("site"));
+        ar.setDirection(fields.get("direction"));
+        ar.setFonction(fields.get("fonction"));
+        ar.setPrenom(fields.get("prenom"));
+        ar.setNom(fields.get("nom"));
+        ar.setMatricule(fields.get("matricule"));
+        ar.setTel(fields.get("tel"));
+        ar.setClassification(Classification.fromLabel(fields.get("classification")));
+        return ar;
     }
 
     // ── Utilitaires ───────────────────────────────────────────

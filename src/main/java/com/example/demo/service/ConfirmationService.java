@@ -20,11 +20,14 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ConfirmationService {
 
-    private final PendingDocumentRepository   pendingRepo;
-    private final AdminDocumentRepository     adminDocRepo;
-    private final EmployeeDocumentRepository  empDocRepo;
-    private final EmployeeRepository          employeeRepo;
-    private final AiClassifierService         aiClassifier;
+    private final PendingDocumentRepository    pendingRepo;
+    private final AdminDocumentRepository      adminDocRepo;
+    private final EmployeeDocumentRepository   empDocRepo;
+    private final EmployeeRepository           employeeRepo;
+    private final MaterialRepository           materialRepo;
+    private final ExternalMaterialRepository   externalMaterialRepo;
+    private final AccessRequestRepository      accessRequestRepo;
+    private final AiClassifierService          aiClassifier;
 
     // ── Confirmer un document → l'archiver dans la bonne collection
     public String confirmDocument(String pendingId) {
@@ -37,11 +40,14 @@ public class ConfirmationService {
 
         if ("EMPLOYEE".equals(docType)) {
             archiveAsEmployee(pending);
-        } else if (docType != null && docType.startsWith("TYPE_")) {
-            archiveAsAdminDocument(pending);
+        } else if ("TYPE_A".equals(docType)) {
+            archiveAsAccessRequest(pending);
+        } else if ("TYPE_B".equals(docType)) {
+            archiveAsMaterial(pending);
+        } else if ("TYPE_C".equals(docType)) {
+            archiveAsExternalMaterial(pending);
         } else {
-            // Type inconnu → archiver comme admin document générique
-            pending.setDocumentType("TYPE_A");
+            // Type inconnu → archive générique
             archiveAsAdminDocument(pending);
         }
 
@@ -125,6 +131,48 @@ public class ConfirmationService {
         emp.setAttachedFile(attachedFile);
         employeeRepo.save(emp);
         log.info("Employee archivé : {}", emp.getName());
+    }
+
+    // ── Archivage vers materials ──────────────────────────────
+    private void archiveAsMaterial(PendingDocument pending) {
+        Material mat = aiClassifier.mapToMaterial(pending.getExtractedFields());
+
+        // Nom de fichier : prenom-nom-<date>.<ext>
+        String fileBase = ((mat.getPrenom() != null ? mat.getPrenom() : "")
+                + " " + (mat.getNom() != null ? mat.getNom() : "")).trim();
+        if (fileBase.isBlank()) fileBase = "materiel";
+
+        mat.setAttachedFile(renameAttachedFile(pending.getOriginalFilePath(), fileBase));
+        materialRepo.save(mat);
+        log.info("Matériel archivé : {} {}", mat.getPrenom(), mat.getNom());
+    }
+
+    // ── Archivage vers access_requests ────────────────────────
+    private void archiveAsAccessRequest(PendingDocument pending) {
+        AccessRequest ar = aiClassifier.mapToAccessRequest(pending.getExtractedFields());
+
+        String fileBase = ((ar.getPrenom() != null ? ar.getPrenom() : "")
+                + " " + (ar.getNom() != null ? ar.getNom() : "")).trim();
+        if (fileBase.isBlank()) fileBase = "acces";
+
+        ar.setAttachedFile(renameAttachedFile(pending.getOriginalFilePath(), fileBase));
+        accessRequestRepo.save(ar);
+        log.info("Demande d'accès archivée : {} {} ({})",
+                ar.getPrenom(), ar.getNom(), ar.getClassification());
+    }
+
+    // ── Archivage vers external_materials ─────────────────────
+    private void archiveAsExternalMaterial(PendingDocument pending) {
+        ExternalMaterial em = aiClassifier.mapToExternalMaterial(pending.getExtractedFields());
+
+        String fileBase = ((em.getPrenom() != null ? em.getPrenom() : "")
+                + " " + (em.getNom() != null ? em.getNom() : "")).trim();
+        if (fileBase.isBlank()) fileBase = "materiel-externe";
+
+        em.setAttachedFile(renameAttachedFile(pending.getOriginalFilePath(), fileBase));
+        externalMaterialRepo.save(em);
+        log.info("Matériel externe archivé : {} {} ({})",
+                em.getPrenom(), em.getNom(), em.getRole());
     }
 
     // ── Renomme le fichier joint en <nom-employe>-<date>.<ext> ──
