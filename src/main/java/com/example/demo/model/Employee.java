@@ -5,8 +5,12 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
+/**
+ * Employé créé à partir du formulaire
+ * "User Account Activation / Modification / Removal Form" (E DSI 3812).
+ * Tous les champs sont optionnels.
+ */
 @Data
 @Document(collection = "employees")
 public class Employee {
@@ -14,25 +18,20 @@ public class Employee {
     @Id
     private String id;
 
-    private String fullName;
-    private String employeeId; // matricule
-    private String department;
-    private String position;   // fonction
-    private String site;
-    private String email;
-    private String phone;
-    private String company;
-    private String mobile;
+    private String name;            // User to be activated
+    private String company;         // Company
+    private String site;            // Site
+    private String department;      // Department
+    private String mobile;          // Mobile
+    private String officePhone;     // Office Phone
+    private String kindOfUpdate;    // Activation | Modification | Removal | Suspension | Reactivation
 
-    private String sourceDocumentId; // référence à EmployeeDocument
+    // Demandeur du formulaire — le "Job Role" est celui du demandeur, pas de l'employé
+    private String requester;          // Requester (System Owner / HR responsible)
+    private String requesterJobRole;   // Job Role du demandeur
 
-    private List<VpnEntry> vpnEntries;
+    private String attachedFile;    // chemin du document d'origine joint
 
+    private String sourceDocumentId;
     private LocalDateTime createdAt = LocalDateTime.now();
-
-    @Data
-    public static class VpnEntry {
-        private String application;
-        private String profile;
-    }
 }

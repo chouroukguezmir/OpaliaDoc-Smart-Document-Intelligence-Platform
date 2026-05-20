@@ -8,6 +8,7 @@ import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
 
@@ -52,6 +53,40 @@ public class ConfirmationController {
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // Mettre à jour les champs extraits (édition avant confirmation)
+    @PutMapping("/{id}")
+    public ResponseEntity<PendingDocument> update(
+            @PathVariable String id,
+            @RequestBody Map<String, String> fields) {
+        try {
+            return ResponseEntity.ok(confirmationService.updateFields(id, fields));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    // Servir le fichier scanné d'origine
+    @GetMapping("/{id}/file")
+    public ResponseEntity<FileSystemResource> getFile(@PathVariable String id) {
+        try {
+            PendingDocument pending = confirmationService.getPendingById(id);
+            if (pending.getOriginalFilePath() == null)
+                return ResponseEntity.notFound().build();
+
+            File file = new File(pending.getOriginalFilePath());
+            if (!file.exists()) return ResponseEntity.notFound().build();
+
+            String contentType = Files.probeContentType(file.toPath());
+            return ResponseEntity.ok()
+                    .contentType(contentType != null
+                            ? MediaType.parseMediaType(contentType)
+                            : MediaType.APPLICATION_OCTET_STREAM)
+                    .body(new FileSystemResource(file));
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
         }
     }
 

@@ -23,6 +23,8 @@ public class AiClassifierService {
         // EMPLOYEE — E DSI 3812
         if (t.contains("3812"))                             scoreEmployee += 4;
         if (t.contains("compte utilisateur"))               scoreEmployee += 3;
+        if (t.contains("user account"))                     scoreEmployee += 3;
+        if (t.contains("activation") && t.contains("removal")) scoreEmployee += 3;
         if (t.contains("profil vp") || t.contains("vpn"))  scoreEmployee += 2;
         if (t.contains("chemin réseau") || t.contains("chemin reseau")) scoreEmployee += 2;
         if (t.contains("login") || t.contains("identifiant")) scoreEmployee += 1;
@@ -102,45 +104,24 @@ public class AiClassifierService {
     }
 
     // ── Mapping vers Employee depuis les champs extraits ──────
+    // Champs du formulaire E DSI 3812 (User Account Activation/Modification/Removal Form)
     public Employee mapToEmployee(Map<String, String> fields, String rawText) {
         Employee emp = new Employee();
-        if (fields == null) {
-            emp.setFullName(extractSimpleValue(rawText, "nom", "name"));
-            emp.setEmployeeId(extractSimpleValue(rawText, "matricule", "id"));
-            return emp;
-        }
-        String nom    = fields.getOrDefault("nom", "");
-        String prenom = fields.getOrDefault("prenom", "");
-        emp.setFullName((prenom + " " + nom).trim());
-        emp.setEmployeeId(fields.get("matricule"));
-        emp.setDepartment(fields.get("departement"));
-        emp.setPosition(fields.get("fonction"));
+        if (fields == null) return emp;
+
+        emp.setName(fields.get("name"));
+        emp.setCompany(fields.get("company"));
         emp.setSite(fields.get("site"));
-        emp.setEmail(fields.get("email"));
-        emp.setPhone(fields.get("telephone"));
+        emp.setDepartment(fields.get("department"));
         emp.setMobile(fields.get("mobile"));
-        emp.setCompany(fields.getOrDefault("societe", "Opalia Pharma"));
+        emp.setOfficePhone(fields.get("officePhone"));
+        emp.setKindOfUpdate(fields.get("kindOfUpdate"));
+        emp.setRequester(fields.get("requester"));
+        emp.setRequesterJobRole(fields.get("requesterJobRole"));
         return emp;
     }
 
     // ── Utilitaires ───────────────────────────────────────────
-    private String extractSimpleValue(String text, String... keywords) {
-        if (text == null) return null;
-        for (String line : text.split("\n")) {
-            String lower = line.toLowerCase();
-            for (String kw : keywords) {
-                if (lower.contains(kw.toLowerCase())) {
-                    String[] parts = line.split("[:;|]");
-                    if (parts.length > 1) {
-                        String val = parts[parts.length - 1].trim();
-                        if (!val.isBlank() && val.length() < 100) return val;
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
     public String extractEmail(String text) {
         if (text == null) return null;
         Pattern p = Pattern.compile("[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}");

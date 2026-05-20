@@ -27,6 +27,7 @@ public class ScanServiceImpl implements ScanService {
     private final ScanSessionRepository       scanSessionRepository;
     private final PendingDocumentRepository   pendingDocumentRepository;
     private final NlpService                  nlpService;
+    private final GeminiService               geminiService;
     private final AiClassifierService         aiClassifier;
     private final PdfGeneratorService         pdfGenerator;
     private final FileTextExtractorService    fileTextExtractor;
@@ -48,15 +49,19 @@ public class ScanServiceImpl implements ScanService {
         scanSessionRepository.save(session);
 
         try {
-            // 3. Analyse via Python NLP
+            // 3. Analyse : Gemini AI en priorité, puis Python NLP, sinon OCR Java
             Map<String, Object> nlpResult = new HashMap<>();
-            boolean nlpAvailable = nlpService.isAvailable();
 
-            if (nlpAvailable) {
-                log.info("Python NLP disponible — analyse en cours");
+            if (geminiService.isConfigured()) {
+                log.info("Analyse via Gemini AI");
+                nlpResult = geminiService.analyzeDocument(physicalFile, file.getContentType());
+            }
+            if (nlpResult.isEmpty() && nlpService.isAvailable()) {
+                log.info("Gemini indisponible — analyse via Python NLP");
                 nlpResult = nlpService.analyzeDocument(physicalFile);
-            } else {
-                log.warn("Python NLP non disponible — fallback OCR Java");
+            }
+            if (nlpResult.isEmpty()) {
+                log.warn("Aucun service AI disponible — fallback OCR Java + mots-clés");
             }
 
             // 4. Extraire les données du résultat NLP
